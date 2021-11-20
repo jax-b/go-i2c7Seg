@@ -159,6 +159,9 @@ func (self *SevenSegI2C) Begin() error {
 
 	return nil
 }
+func (self *SevenSegI2C) Close() {
+	self.i2c.Close()
+}
 func (self *SevenSegI2C) Clear() {
 	self.displaybuffer = [5]uint8{0, 0, 0, 0, 0}
 }
