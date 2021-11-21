@@ -166,7 +166,7 @@ func (self *SevenSegI2C) Clear() {
 	self.displaybuffer = [5]uint8{0, 0, 0, 0, 0}
 }
 func (self *SevenSegI2C) WriteDisplay() error {
-	var buffer [17]byte
+	var buffer [10]byte
 
 	buffer[0] = 0x00 // start at address $00
 
