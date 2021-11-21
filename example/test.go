@@ -42,4 +42,6 @@ func main() {
 	time.Sleep(time.Second * 2)
 	seg.Clear()
 	seg.WriteDisplay()
+
+	seg.Close()
 }
