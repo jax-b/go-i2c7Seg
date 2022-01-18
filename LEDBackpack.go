@@ -4,7 +4,10 @@
 package i2c7Seg
 
 import (
+	"strings"
+
 	"github.com/d2r2/go-i2c"
+	"github.com/d2r2/go-logger"
 )
 
 const (
@@ -136,12 +139,19 @@ func NewSevenSegI2C(address byte, bus int) (*SevenSegI2C, error) {
 	new7seg.Begin()
 	return new7seg, nil
 }
-func (self *SevenSegI2C) Begin() error {
+func (s7s *SevenSegI2C) LogLevel(level string) {
+	if strings.ToLower(level) == "debug" {
+		logger.ChangePackageLogLevel("i2c", logger.DebugLevel)
+	} else if strings.ToLower(level) == "info" {
+		logger.ChangePackageLogLevel("i2c", logger.InfoLevel)
+	}
+}
+func (s7s *SevenSegI2C) Begin() error {
 
 	// turn on oscillator
 	var buffer [1]byte
 	buffer[0] = 0x21
-	_, err := self.i2c.WriteBytes(buffer[:])
+	_, err := s7s.i2c.WriteBytes(buffer[:])
 	if err != nil {
 		return err
 	}
@@ -150,65 +160,65 @@ func (self *SevenSegI2C) Begin() error {
 	// ensure internal RAM is cleared before turning on display
 	// this ensures that no garbage pixels show up on the display
 	// when it is turned on.
-	self.Clear()
-	self.WriteDisplay()
+	s7s.Clear()
+	s7s.WriteDisplay()
 
-	self.BlinkRate(HT16K33_BLINK_OFF)
+	s7s.BlinkRate(HT16K33_BLINK_OFF)
 
-	self.SetBrightness(15) // max brightness
+	s7s.SetBrightness(15) // max brightness
 
 	return nil
 }
-func (self *SevenSegI2C) Close() {
-	self.i2c.Close()
+func (s7s *SevenSegI2C) Close() {
+	s7s.i2c.Close()
 }
-func (self *SevenSegI2C) Clear() {
-	self.displaybuffer = [5]uint8{0, 0, 0, 0, 0}
+func (s7s *SevenSegI2C) Clear() {
+	s7s.displaybuffer = [5]uint8{0, 0, 0, 0, 0}
 }
-func (self *SevenSegI2C) WriteDisplay() error {
+func (s7s *SevenSegI2C) WriteDisplay() error {
 	var buffer [10]byte
 
 	buffer[0] = 0x00 // start at address $00
 
 	for i := 0; i < 5; i++ {
-		buffer[1+2*i] = byte(self.displaybuffer[i] & 0xFF)
-		// buffer[2+2*i] = byte(self.displaybuffer[i] >> 8)
+		buffer[1+2*i] = byte(s7s.displaybuffer[i] & 0xFF)
+		// buffer[2+2*i] = byte(s7s.displaybuffer[i] >> 8)
 	}
-	_, err := self.i2c.WriteBytes(buffer[:])
+	_, err := s7s.i2c.WriteBytes(buffer[:])
 	return err
 }
-func (self *SevenSegI2C) SetBrightness(brightness byte) error {
+func (s7s *SevenSegI2C) SetBrightness(brightness byte) error {
 	if brightness > 15 {
 		brightness = 15 // limit to max brightness
 	}
 	var buffer [1]byte
 	buffer[0] = HT16K33_CMD_BRIGHTNESS | brightness
-	_, err := self.i2c.WriteBytes(buffer[:])
+	_, err := s7s.i2c.WriteBytes(buffer[:])
 	return err
 }
-func (self *SevenSegI2C) BlinkRate(rate byte) error {
+func (s7s *SevenSegI2C) BlinkRate(rate byte) error {
 	if rate > 3 {
 		rate = 0 // turn off if not sure
 	}
 	var buffer [1]byte
 	buffer[0] = HT16K33_BLINK_CMD | HT16K33_BLINK_DISPLAYON | (rate << 1)
-	_, err := self.i2c.WriteBytes(buffer[:])
+	_, err := s7s.i2c.WriteBytes(buffer[:])
 	return err
 }
-func (self *SevenSegI2C) WriteDigitRaw(d byte, bitmask byte) {
+func (s7s *SevenSegI2C) WriteDigitRaw(d byte, bitmask byte) {
 	if d > 4 {
 		return
 	}
-	self.displaybuffer[d] = bitmask
+	s7s.displaybuffer[d] = bitmask
 }
-func (self *SevenSegI2C) DrawColon(visible bool) {
+func (s7s *SevenSegI2C) DrawColon(visible bool) {
 	if visible {
-		self.displaybuffer[2] = 0x2
+		s7s.displaybuffer[2] = 0x2
 	} else {
-		self.displaybuffer[2] = 0
+		s7s.displaybuffer[2] = 0
 	}
 }
-func (self *SevenSegI2C) WriteAsciiChar(d byte, ascii byte, dp bool) {
+func (s7s *SevenSegI2C) WriteAsciiChar(d byte, ascii byte, dp bool) {
 	if d > 4 {
 		return
 	}
@@ -217,5 +227,5 @@ func (self *SevenSegI2C) WriteAsciiChar(d byte, ascii byte, dp bool) {
 	if dp {
 		dpMask = 0x80
 	}
-	self.WriteDigitRaw(d, letter|dpMask)
+	s7s.WriteDigitRaw(d, letter|dpMask)
 }
