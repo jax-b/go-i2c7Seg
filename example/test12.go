@@ -11,12 +11,11 @@ import (
 func main() {
 	fmt.Println("Hello world")
 	fmt.Println("7 segment I2C Test")
-	seg, err := i2c7Seg.NewSevenSegI2C(0x70, 1)
+	seg, err := i2c7Seg.NewSevenSegI2C12(0x70, 1)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	seg.Begin()
 	for i := 0; i < 2; i++ {
 		seg.WriteAsciiChar(0, 'D', false)
 		seg.WriteAsciiChar(1, 'E', true)
@@ -37,7 +36,7 @@ func main() {
 	seg.WriteAsciiChar(1, '2', false)
 	seg.WriteAsciiChar(3, '3', false)
 	seg.WriteAsciiChar(4, '4', false)
-	seg.DrawColon(false)
+	seg.DrawColon(true, 0xFF)
 	seg.WriteDisplay()
 	time.Sleep(time.Second * 2)
 	seg.Clear()

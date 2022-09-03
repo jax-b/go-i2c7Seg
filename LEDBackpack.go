@@ -125,9 +125,10 @@ type SevenSegI2C struct {
 	i2c           *i2c.I2C
 	postion       byte
 	displaybuffer [5]uint8
+	size          float32
 }
 
-func NewSevenSegI2C(address byte, bus int) (*SevenSegI2C, error) {
+func NewSevenSegI2C057(address byte, bus int) (*SevenSegI2C, error) {
 	i2c, err := i2c.NewI2C(address, bus)
 	if err != nil {
 		return nil, err
@@ -135,10 +136,26 @@ func NewSevenSegI2C(address byte, bus int) (*SevenSegI2C, error) {
 	new7seg := &SevenSegI2C{
 		i2c:     i2c,
 		postion: 0,
+		size:    0.57,
 	}
 	new7seg.Begin()
 	return new7seg, nil
 }
+
+func NewSevenSegI2C12(address byte, bus int) (*SevenSegI2C, error) {
+	i2c, err := i2c.NewI2C(address, bus)
+	if err != nil {
+		return nil, err
+	}
+	new7seg := &SevenSegI2C{
+		i2c:     i2c,
+		postion: 0,
+		size:    1.2,
+	}
+	new7seg.Begin()
+	return new7seg, nil
+}
+
 func (s7s *SevenSegI2C) LogLevel(level string) {
 	if strings.ToLower(level) == "debug" {
 		logger.ChangePackageLogLevel("i2c", logger.DebugLevel)
@@ -211,11 +228,33 @@ func (s7s *SevenSegI2C) WriteDigitRaw(d byte, bitmask byte) {
 	}
 	s7s.displaybuffer[d] = bitmask
 }
-func (s7s *SevenSegI2C) DrawColon(visible bool) {
-	if visible {
-		s7s.displaybuffer[2] = 0x2
-	} else {
-		s7s.displaybuffer[2] = 0
+
+// on 1.2 inch displays, their are multiple colon poitns that can be turned on
+// The function defaults to the center colon unless a different one is specified
+// 2 center colon
+// 4 top left colon
+// 6 top left colon + center
+// 8 bottom left colon
+// 10 bottom left colon + center
+// 12 bottom left colon + top left colon
+// 14 bottom left colon + top left colon + center
+func (s7s *SevenSegI2C) DrawColon(visible bool, colonvalue ...uint8) {
+	if s7s.size == 0.57 {
+		if visible {
+			s7s.displaybuffer[2] = 0x2
+		} else {
+			s7s.displaybuffer[2] = 0
+		}
+	}
+	if s7s.size == 1.2 {
+		if colonvalue == nil {
+			colonvalue = []uint8{2}
+		}
+		if visible {
+			s7s.displaybuffer[2] = colonvalue[0]
+		} else {
+			s7s.displaybuffer[2] = 0
+		}
 	}
 }
 func (s7s *SevenSegI2C) WriteAsciiChar(d byte, ascii byte, dp bool) {
